@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import "dotenv/config";
 import express from "express";
 import ViteExpress from "vite-express";
 import { createServer } from "http";
@@ -20,24 +20,27 @@ app.use(webhookRoutes);
 // Socket.io setup with CORS for development
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.NODE_ENV === "production" ? false : ["http://localhost:3000"],
-    methods: ["GET", "POST"]
-  }
+    origin:
+      process.env.NODE_ENV === "production" ? false : ["http://localhost:3000"],
+    methods: ["GET", "POST"],
+  },
 });
 
-console.log('🚀 Starting Tempo server...');
-console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-console.log(`📝 MongoDB URI configured: ${process.env.MONGODB_URI ? 'Yes' : 'No'}\n`);
+console.log("🚀 Starting Tempo server...");
+console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
+console.log(
+  `📝 MongoDB URI configured: ${process.env.MONGODB_URI ? "Yes" : "No"}\n`,
+);
 
 app.use(express.json());
 
 // Health check
 app.get("/api/health", (_, res) => {
-  res.json({ 
-    status: "ok", 
+  res.json({
+    status: "ok",
     service: "tempo",
-    mongodb: io.engine.clientsCount >= 0 ? 'connected' : 'disconnected',
-    socketio: 'active'
+    mongodb: io.engine.clientsCount >= 0 ? "connected" : "disconnected",
+    socketio: "active",
   });
 });
 
@@ -50,11 +53,13 @@ app.use("/api", tableSessionRoutes);
 // Initialize database and sockets
 await connectDatabase();
 setupTableSockets(io);
-console.log('✓ Socket.io initialized');
+console.log("✓ Socket.io initialized");
 
-ViteExpress.config({ mode: "development" });
+ViteExpress.config({
+  mode: (process.env.NODE_ENV as "production" | "development") || "development",
+});
 
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || "3000", 10);
 
 // Use httpServer for Socket.io compatibility
 httpServer.listen(PORT, () => {
