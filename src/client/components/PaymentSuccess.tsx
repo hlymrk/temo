@@ -26,7 +26,7 @@ export default function PaymentSuccess() {
             Payment Successful!
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 2, mb: 4 }}>
-            Your payment has been processed successfully. Thank you for using Tempo!
+            Your payment has been processed successfully. Thank you for using temo!
           </Typography>
           <Button
             variant="contained"

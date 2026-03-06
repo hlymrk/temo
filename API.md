@@ -1,6 +1,7 @@
-# Tempo API Documentation
+# temo API Documentation
 
 ## Base URL
+
 ```
 http://localhost:3000/api
 ```
@@ -10,6 +11,7 @@ http://localhost:3000/api
 ### Orders
 
 #### Create Order
+
 ```http
 POST /api/orders
 Content-Type: application/json
@@ -29,11 +31,13 @@ Content-Type: application/json
 ```
 
 #### Get Order by Table ID
+
 ```http
 GET /api/orders/table/:tableId
 ```
 
 #### Seed Test Order
+
 ```http
 POST /api/orders/seed
 Content-Type: application/json
@@ -46,6 +50,7 @@ Content-Type: application/json
 ### Payments
 
 #### Create Stripe Payment Intent
+
 ```http
 POST /api/payments/stripe
 Content-Type: application/json
@@ -66,6 +71,7 @@ Response:
 ```
 
 #### Create TrueLayer Payment
+
 ```http
 POST /api/payments/truelayer
 Content-Type: application/json
@@ -87,6 +93,7 @@ Response:
 ```
 
 #### Verify Payment
+
 ```http
 GET /api/payments/verify/:paymentIntentId
 
@@ -101,6 +108,7 @@ Response:
 ### QR Codes
 
 #### Generate QR Code
+
 ```http
 POST /api/qr/generate
 Content-Type: application/json
@@ -120,6 +128,7 @@ Response:
 ```
 
 #### Get Table URL
+
 ```http
 GET /api/qr/table/:tableId
 
@@ -133,6 +142,7 @@ Response:
 ### Webhooks
 
 #### Stripe Webhook
+
 ```http
 POST /webhooks/stripe
 Content-Type: application/json
@@ -148,40 +158,45 @@ Stripe-Signature: xxx
 ### Client → Server
 
 #### Join Table
+
 ```javascript
-socket.emit('join-table', 'T42');
+socket.emit("join-table", "T42");
 ```
 
 #### Claim Item
+
 ```javascript
-socket.emit('claim-item', {
-  orderId: '507f1f77bcf86cd799439011',
-  itemId: '1',
-  userId: 'user-123'
+socket.emit("claim-item", {
+  orderId: "507f1f77bcf86cd799439011",
+  itemId: "1",
+  userId: "user-123",
 });
 ```
 
 #### Unclaim Item
+
 ```javascript
-socket.emit('unclaim-item', {
-  orderId: '507f1f77bcf86cd799439011',
-  itemId: '1'
+socket.emit("unclaim-item", {
+  orderId: "507f1f77bcf86cd799439011",
+  itemId: "1",
 });
 ```
 
 ### Server → Client
 
 #### Order State
+
 ```javascript
-socket.on('order-state', (order) => {
+socket.on("order-state", (order) => {
   // Sent when joining a table
   // Contains full order object
 });
 ```
 
 #### Order Updated
+
 ```javascript
-socket.on('order-updated', (order) => {
+socket.on("order-updated", (order) => {
   // Sent when any item is claimed/unclaimed
   // Contains updated order object
 });
@@ -190,6 +205,7 @@ socket.on('order-updated', (order) => {
 ## Data Models
 
 ### Order
+
 ```typescript
 {
   _id: string;
@@ -205,6 +221,7 @@ socket.on('order-updated', (order) => {
 ```
 
 ### OrderItem
+
 ```typescript
 {
   id: string;
@@ -216,6 +233,7 @@ socket.on('order-updated', (order) => {
 ```
 
 ### Payment
+
 ```typescript
 {
   _id: string;
@@ -244,6 +262,7 @@ All endpoints return errors in the following format:
 ```
 
 Common HTTP status codes:
+
 - `400` - Bad Request (missing or invalid parameters)
 - `404` - Not Found (resource doesn't exist)
 - `500` - Internal Server Error

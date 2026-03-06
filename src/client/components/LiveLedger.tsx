@@ -10,7 +10,7 @@ interface LiveLedgerProps {
 }
 
 export default function LiveLedger({ userId, socket, onProceedToPayment }: LiveLedgerProps) {
-  const { order } = useOrderStore();
+  const { order, claimItem, unclaimItem } = useOrderStore();
 
   if (!order) {
     return (
@@ -23,10 +23,16 @@ export default function LiveLedger({ userId, socket, onProceedToPayment }: LiveL
   }
 
   const handleClaimItem = (itemId: string) => {
+    // Optimistic update
+    claimItem(itemId, userId);
+    // Send to server
     socket?.emit('claim-item', { orderId: order._id, itemId, userId });
   };
 
   const handleUnclaimItem = (itemId: string) => {
+    // Optimistic update
+    unclaimItem(itemId);
+    // Send to server
     socket?.emit('unclaim-item', { orderId: order._id, itemId });
   };
 

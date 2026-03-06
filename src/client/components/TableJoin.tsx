@@ -45,7 +45,7 @@ export default function TableJoin({ onJoin }: TableJoinProps) {
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             <QrCode size={64} color="hsl(14, 85%, 55%)" style={{ margin: '0 auto' }} />
             <Typography variant="h4" sx={{ mt: 2, fontWeight: 700, color: 'secondary.main' }}>
-              tempo
+              temo
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
               Split your bill in real-time

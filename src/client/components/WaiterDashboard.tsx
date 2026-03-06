@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -16,6 +16,22 @@ import {
   DialogActions,
 } from '@mui/material';
 import { Plus, QrCode as QrCodeIcon, Eye, Download } from 'lucide-react';
+import { useSocket } from '../hooks/useSocket';
+
+interface Order {
+  _id: string;
+  tableId: string;
+  items: Array<{
+    id: string;
+    name: string;
+    priceInPence: number;
+    quantity: number;
+    claimedBy?: string;
+  }>;
+  totalInPence: number;
+  status: string;
+  createdAt: string;
+}
 
 export default function WaiterDashboard() {
   const [tableId, setTableId] = useState('');
@@ -26,6 +42,57 @@ export default function WaiterDashboard() {
     tableUrl: string;
     tableId: string;
   } | null>(null);
+  const [activeOrders, setActiveOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const { socket } = useSocket();
+
+  // Fetch active orders on component mount
+  useEffect(() => {
+    const fetchActiveOrders = async () => {
+      try {
+        const response = await fetch('/api/orders/active');
+        if (response.ok) {
+          const orders = await response.json();
+          setActiveOrders(orders);
+        }
+      } catch (error) {
+        console.error('Error fetching active orders:', error);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchActiveOrders();
+  }, []);
+
+  // Listen for real-time order updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleOrderUpdate = () => {
+      // Refresh active orders when any order is updated
+      fetch('/api/orders/active')
+        .then(response => response.ok ? response.json() : [])
+        .then(orders => setActiveOrders(orders))
+        .catch(error => console.error('Error refreshing orders:', error));
+    };
+
+    const handleOrderCreated = () => {
+      // Refresh active orders when a new order is created
+      fetch('/api/orders/active')
+        .then(response => response.ok ? response.json() : [])
+        .then(orders => setActiveOrders(orders))
+        .catch(error => console.error('Error refreshing orders:', error));
+    };
+
+    socket.on('order-updated', handleOrderUpdate);
+    socket.on('order-created', handleOrderCreated);
+
+    return () => {
+      socket.off('order-updated', handleOrderUpdate);
+      socket.off('order-created', handleOrderCreated);
+    };
+  }, [socket]);
 
   const handleCreateOrder = async () => {
     if (!tableId.trim()) return;
@@ -43,6 +110,13 @@ export default function WaiterDashboard() {
       if (response.ok) {
         setMessage(`✓ Order created for table ${tableId}`);
         setTableId('');
+        
+        // Refresh active orders
+        const ordersResponse = await fetch('/api/orders/active');
+        if (ordersResponse.ok) {
+          const orders = await ordersResponse.json();
+          setActiveOrders(orders);
+        }
       } else {
         setMessage('✗ Failed to create order');
       }
@@ -185,40 +259,63 @@ export default function WaiterDashboard() {
             </Paper>
           </Grid>
 
-          {/* Active Tables (Mock) */}
+          {/* Active Tables */}
           <Grid size={{ xs: 12 }}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
               Active Tables
             </Typography>
-            <Grid container spacing={2}>
-              {['T1', 'T2', 'T5', 'T42'].map((table) => (
-                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={table}>
-                  <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                          {table}
-                        </Typography>
-                        <Chip label="Active" color="success" size="small" />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        4 items • £52.00
-                      </Typography>
-                      <Button
-                        fullWidth
-                        size="small"
-                        variant="outlined"
-                        startIcon={<Eye size={16} />}
-                        href={`/?table=${table}`}
-                        target="_blank"
-                      >
-                        View
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+            {ordersLoading ? (
+              <Typography variant="body2" color="text.secondary">
+                Loading active orders...
+              </Typography>
+            ) : activeOrders.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No active orders. Create an order to get started.
+              </Typography>
+            ) : (
+              <Grid container spacing={2}>
+                {activeOrders.map((order) => {
+                  const claimedItems = order.items.filter(item => item.claimedBy).length;
+                  const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+                  const totalPrice = (order.totalInPence / 100).toFixed(2);
+
+                  return (
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={order._id}>
+                      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                              {order.tableId}
+                            </Typography>
+                            <Chip 
+                              label={order.status} 
+                              color={order.status === 'active' ? 'success' : 'warning'} 
+                              size="small" 
+                            />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {totalItems} items • £{totalPrice}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {claimedItems}/{totalItems} claimed
+                          </Typography>
+                          <Button
+                            fullWidth
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Eye size={16} />}
+                            href={`/?table=${order.tableId}`}
+                            target="_blank"
+                          >
+                            View
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            )}
           </Grid>
         </Grid>
       </Box>

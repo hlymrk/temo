@@ -1,10 +1,10 @@
-# tempo
+# temo
 
 A real-time restaurant payment splitting system built for UK restaurants.
 
 ## Overview
 
-Tempo allows restaurant customers to scan a QR code, view their bill in real-time, claim items, and pay their share instantly using bank transfer or card payment.
+temo allows restaurant customers to scan a QR code, view their bill in real-time, claim items, and pay their share instantly using bank transfer or card payment.
 
 ## Features
 
@@ -47,13 +47,13 @@ Open http://localhost:3000
 ## Project Structure
 
 ```
-tempo/
+temo/
 ├── src/
 │   ├── client/              # React frontend
 │   │   ├── components/      # UI components
 │   │   ├── hooks/           # Custom hooks (useSocket)
 │   │   ├── store/           # Zustand state management
-│   │   └── theme.ts         # MUI theme (Tempo colors)
+│   │   └── theme.ts         # MUI theme (temo colors)
 │   └── server/              # Express backend
 │       ├── models/          # Mongoose schemas
 │       ├── services/        # Business logic

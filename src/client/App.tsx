@@ -1,6 +1,6 @@
 import { ThemeProvider, CssBaseline, Snackbar, Alert } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { tempoTheme } from './theme';
+import { temoTheme } from './theme';
 import { useSocket } from './hooks/useSocket';
 import { useOrderStore } from './store/orderStore';
 import { TableJoin, LiveLedger, PaymentSelection } from './components';
@@ -82,7 +82,7 @@ function App() {
   if (view === 'presentation') {
     return (
       <ErrorBoundary>
-        <ThemeProvider theme={tempoTheme}>
+        <ThemeProvider theme={temoTheme}>
           <CssBaseline />
           <PresentationSlides />
         </ThemeProvider>
@@ -92,7 +92,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider theme={tempoTheme}>
+      <ThemeProvider theme={temoTheme}>
         <CssBaseline />
         
         {view === 'admin' && <AdminDashboard />}

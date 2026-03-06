@@ -26,6 +26,9 @@ const io = new Server(httpServer, {
   },
 });
 
+// Make io available globally for routes
+(global as any).io = io;
+
 console.log("🚀 Starting Tempo server...");
 console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
 console.log(

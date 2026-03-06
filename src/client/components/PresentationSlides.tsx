@@ -28,7 +28,7 @@ export default function PresentationSlides() {
   const slides: Slide[] = [
     // Slide 1: Title
     {
-      title: 'tempo',
+      title: 'temo',
       subtitle: 'The Future of Restaurant Payments',
       background: 'linear-gradient(135deg, #E65100 0%, #1A237E 100%)',
       content: (
@@ -101,7 +101,7 @@ export default function PresentationSlides() {
     // Slide 3: The Solution
     {
       title: 'The Solution',
-      subtitle: 'Tempo: Real-time payment splitting',
+      subtitle: 'temo: Real-time payment splitting',
       background: 'linear-gradient(135deg, #E65100 0%, #ff8a50 100%)',
       content: (
         <Box sx={{ color: 'white' }}>
@@ -361,7 +361,7 @@ export default function PresentationSlides() {
     // Slide 8: Future Roadmap
     {
       title: 'Future Roadmap',
-      subtitle: 'What\'s next for Tempo',
+      subtitle: 'What\'s next for temo',
       background: 'linear-gradient(135deg, #E65100 0%, #ff6f00 100%)',
       content: (
         <Box sx={{ color: 'white' }}>
