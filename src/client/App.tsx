@@ -3,23 +3,27 @@ import { useState, useEffect } from 'react';
 import { temoTheme } from './theme';
 import { useSocket } from './hooks/useSocket';
 import { useOrderStore } from './store/orderStore';
-import { TableJoin, LiveLedger, PaymentSelection } from './components';
+import { TableJoin, LiveLedger, PaymentSelection, PaymentSuccess } from './components';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import WaiterDashboard from './components/WaiterDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import PresentationSlides from './components/PresentationSlides';
 
-type AppView = 'join' | 'ledger' | 'payment' | 'waiter' | 'admin' | 'presentation';
+type AppView = 'join' | 'ledger' | 'payment' | 'success' | 'waiter' | 'admin' | 'presentation';
 
 function App() {
   const [view, setView] = useState<AppView>('join');
   const [tableId, setTableId] = useState<string>('');
-  const [userId] = useState(() => `user-${Math.random().toString(36).substr(2, 9)}`);
-  const { socket, isConnected } = useSocket();
+  const { socket, isConnected, userId } = useSocket();
   const { setOrder, updateOrder } = useOrderStore();
 
   // Check URL for role-based views and table parameter
   useEffect(() => {
+    if (window.location.pathname === '/payment-success') {
+      setView('success');
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     
     if (params.get('waiter') === 'true') {
@@ -106,6 +110,7 @@ function App() {
           />
         )}
         {view === 'payment' && <PaymentSelection userId={userId} />}
+        {view === 'success' && <PaymentSuccess />}
 
         {view !== 'waiter' && view !== 'admin' && (
           <Snackbar open={!isConnected} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
