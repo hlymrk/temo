@@ -24,7 +24,11 @@ export const setupTableSockets = (io: Server) => {
 
     // Claim an item
     socket.on("claim-item", async ({ orderId, itemId }) => {
-      const order = await OrderService.claimItem(orderId, itemId, user?.id);
+      const order = await OrderService.claimItem(
+        orderId,
+        itemId,
+        user?.id as string,
+      );
       if (order) {
         io.to(`table:${order.tableId}`).emit("order-updated", order);
         io.to("waiters").emit("order-updated", order);
