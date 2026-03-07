@@ -2,13 +2,10 @@ import { useState } from 'react';
 import { Box, Container, Typography, Paper, Button, Chip, CircularProgress, Alert } from '@mui/material';
 import { useOrderStore } from '../store/orderStore';
 import { Landmark, CreditCard, CheckCircle } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
 
 interface PaymentSelectionProps {
   userId: string;
 }
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function PaymentSelection({ userId }: PaymentSelectionProps) {
   const { order } = useOrderStore();
@@ -70,24 +67,10 @@ export default function PaymentSelection({ userId }: PaymentSelectionProps) {
 
       if (!response.ok) throw new Error('Payment creation failed');
 
-      const { clientSecret } = await response.json();
-      const stripe = await stripePromise;
+      const { checkoutUrl } = await response.json();
 
-      if (!stripe) throw new Error('Stripe not loaded');
-
-      // Redirect to Stripe Checkout or use Elements
-      const { error: stripeError } = await stripe.confirmPayment({
-        clientSecret,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment-success`,
-        },
-      });
-
-      if (stripeError) {
-        setError(stripeError.message || 'Payment failed');
-      } else {
-        setSuccess(true);
-      }
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutUrl;
     } catch (err) {
       setError('Failed to process card payment. Please try again.');
       console.error('Stripe payment error:', err);

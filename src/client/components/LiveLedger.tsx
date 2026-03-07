@@ -11,6 +11,10 @@ interface LiveLedgerProps {
 
 export default function LiveLedger({ userId, socket, onProceedToPayment }: LiveLedgerProps) {
   const { order, claimItem, unclaimItem } = useOrderStore();
+  console.log('Rendering LiveLedger with userId:', userId);
+  console.log('Current socket:', socket);
+  console.log('Current order state:', order);
+  
 
   if (!order) {
     return (

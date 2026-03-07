@@ -1,14 +1,15 @@
-import Stripe from 'stripe';
-import * as dineroLib from 'dinero.js';
-import * as currenciesLib from 'dinero.js/currencies';
-import { Payment } from '../models/Payment.js';
+import Stripe from "stripe";
+import * as dineroLib from "dinero.js";
+import * as currenciesLib from "dinero.js/currencies";
+import { Payment } from "../models/Payment.js";
 
 const dinero = (dineroLib as any).dinero || (dineroLib as any).default?.dinero;
-const toSnapshot = (dineroLib as any).toSnapshot || (dineroLib as any).default?.toSnapshot;
+const toSnapshot =
+  (dineroLib as any).toSnapshot || (dineroLib as any).default?.toSnapshot;
 const GBP = (currenciesLib as any).GBP || (currenciesLib as any).default?.GBP;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2026-02-25.clover',
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+  apiVersion: "2026-02-25.clover",
 });
 
 export class PaymentService {
@@ -16,15 +17,28 @@ export class PaymentService {
   static async createStripePayment(
     amountInPence: number,
     metadata: Record<string, string>,
-    itemIds: string[]
+    itemIds: string[],
   ) {
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountInPence,
-        currency: 'gbp',
-        automatic_payment_methods: {
-          enabled: true,
-        },
+      // Create a Checkout Session instead of just a PaymentIntent
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "gbp",
+              product_data: {
+                name: "Restaurant Order Payment",
+                description: `Payment for items: ${itemIds.join(", ")}`,
+              },
+              unit_amount: amountInPence,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${process.env.FRONTEND_URL || "http://localhost:5173"}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL || "http://localhost:5173"}/payment-selection`,
         metadata,
       });
 
@@ -34,19 +48,19 @@ export class PaymentService {
         userId: metadata.userId,
         tableId: metadata.tableId,
         amountInPence,
-        provider: 'stripe',
-        providerPaymentId: paymentIntent.id,
-        status: 'pending',
+        provider: "stripe",
+        providerPaymentId: session.id,
+        status: "pending",
         itemIds,
       });
 
       return {
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id,
+        checkoutUrl: session.url,
+        sessionId: session.id,
       };
     } catch (error) {
-      console.error('Stripe payment creation failed:', error);
-      throw new Error('Failed to create payment');
+      console.error("Stripe payment creation failed:", error);
+      throw new Error("Failed to create payment");
     }
   }
 
@@ -54,7 +68,7 @@ export class PaymentService {
   static async createTrueLayerPayment(
     amountInPence: number,
     userId: string,
-    orderId: string
+    orderId: string,
   ) {
     // TrueLayer implementation
     // Note: This requires TrueLayer SDK setup and merchant account
@@ -68,28 +82,30 @@ export class PaymentService {
       authorizationUrl: `https://payment.truelayer.com/payments/${Date.now()}`,
       amount: snapshot.amount,
       currency: snapshot.currency.code,
-      status: 'authorization_required',
+      status: "authorization_required",
     };
   }
 
   // Verify Stripe payment
-  static async verifyStripePayment(paymentIntentId: string) {
+  static async verifyStripePayment(sessionId: string) {
     try {
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
       return {
-        status: paymentIntent.status,
-        amount: paymentIntent.amount,
-        paid: paymentIntent.status === 'succeeded',
+        status: session.payment_status === "paid" ? "succeeded" : "pending",
+        amount: session.amount_total,
+        paid: session.payment_status === "paid",
       };
     } catch (error) {
-      console.error('Stripe payment verification failed:', error);
-      throw new Error('Failed to verify payment');
+      console.error("Stripe payment verification failed:", error);
+      throw new Error("Failed to verify payment");
     }
   }
 
   // Calculate recommended payment method based on amount
-  static getRecommendedPaymentMethod(amountInPence: number): 'truelayer' | 'stripe' {
+  static getRecommendedPaymentMethod(
+    amountInPence: number,
+  ): "truelayer" | "stripe" {
     // Recommend TrueLayer for amounts over £20 (lower fees)
-    return amountInPence > 2000 ? 'truelayer' : 'stripe';
+    return amountInPence > 2000 ? "truelayer" : "stripe";
   }
 }
