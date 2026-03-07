@@ -108,4 +108,35 @@ export class PaymentService {
     // Recommend TrueLayer for amounts over £20 (lower fees)
     return amountInPence > 2000 ? "truelayer" : "stripe";
   }
+
+  // Get payments with optional filters
+  static async getPayments(filters: {
+    tableId?: string;
+    status?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    const query: any = {};
+
+    if (filters.tableId) {
+      query.tableId = filters.tableId;
+    }
+
+    if (filters.status) {
+      query.status = filters.status;
+    }
+
+    if (filters.startDate || filters.endDate) {
+      query.createdAt = {};
+      if (filters.startDate) {
+        query.createdAt.$gte = filters.startDate;
+      }
+      if (filters.endDate) {
+        query.createdAt.$lte = filters.endDate;
+      }
+    }
+
+    const payments = await Payment.find(query).sort({ createdAt: -1 }).lean();
+    return payments;
+  }
 }

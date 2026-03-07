@@ -1,13 +1,13 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IPayment extends Document {
   orderId: string;
   userId: string;
   tableId: string;
   amountInPence: number;
-  provider: 'stripe' | 'truelayer';
+  provider: "stripe" | "truelayer";
   providerPaymentId: string;
-  status: 'pending' | 'succeeded' | 'failed' | 'cancelled';
+  status: "pending" | "succeeded" | "failed" | "cancelled" | "expired";
   itemIds: string[];
   metadata?: Record<string, any>;
   createdAt: Date;
@@ -20,17 +20,17 @@ const PaymentSchema = new Schema<IPayment>(
     userId: { type: String, required: true, index: true },
     tableId: { type: String, required: true, index: true },
     amountInPence: { type: Number, required: true },
-    provider: { type: String, enum: ['stripe', 'truelayer'], required: true },
+    provider: { type: String, enum: ["stripe", "truelayer"], required: true },
     providerPaymentId: { type: String, required: true, unique: true },
     status: {
       type: String,
-      enum: ['pending', 'succeeded', 'failed', 'cancelled'],
-      default: 'pending',
+      enum: ["pending", "succeeded", "failed", "cancelled", "expired"],
+      default: "pending",
     },
     itemIds: [{ type: String }],
     metadata: { type: Schema.Types.Mixed },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const Payment = mongoose.model<IPayment>('Payment', PaymentSchema);
+export const Payment = mongoose.model<IPayment>("Payment", PaymentSchema);

@@ -107,3 +107,21 @@ export const verifyPayment = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to verify payment" });
   }
 };
+
+export const getPayments = async (req: Request, res: Response) => {
+  try {
+    const { tableId, status, startDate, endDate } = req.query;
+
+    const payments = await PaymentService.getPayments({
+      tableId: tableId as string,
+      status: status as string,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+    });
+
+    res.json(payments);
+  } catch (error) {
+    console.error("Error fetching payments:", error);
+    res.status(500).json({ error: "Failed to fetch payments" });
+  }
+};
