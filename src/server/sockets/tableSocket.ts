@@ -4,7 +4,15 @@ import { authenticateSocket } from "../middleware/authMiddleware.js";
 
 export const setupTableSockets = (io: Server) => {
   io.on("connection", (socket: Socket) => {
-    const user = authenticateSocket(socket.handshake);
+    let user;
+    try {
+      user = authenticateSocket(socket.handshake);
+    } catch (error) {
+      console.log(`Authentication failed: ${error.message}`);
+      socket.emit("error", { message: "Authentication failed" });
+      socket.disconnect();
+      return;
+    }
     console.log(`✓ Client connected: ${socket.id} (${user?.role})`);
     // Join waiters room if staff/admin
     if (user?.role === "STAFF" || user?.role === "ADMIN") {
