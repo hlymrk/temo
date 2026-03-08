@@ -8,7 +8,9 @@ export const setupTableSockets = (io: Server) => {
     try {
       user = authenticateSocket(socket.handshake);
     } catch (error) {
-      console.log(`Authentication failed: ${error.message}`);
+      console.log(
+        `Authentication failed: ${(error as Error).message || String(error)} `,
+      );
       socket.emit("error", { message: "Authentication failed" });
       socket.disconnect();
       return;
