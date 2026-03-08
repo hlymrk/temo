@@ -29,7 +29,7 @@ const io = new Server(httpServer, {
 // Make io available globally for routes
 (global as any).io = io;
 
-console.log("🚀 Starting Tempo server...");
+console.log("🚀 Starting temo server...");
 console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
 console.log(
   `📝 MongoDB URI configured: ${process.env.MONGODB_URI ? "Yes" : "No"}\n`,
@@ -41,7 +41,7 @@ app.use(express.json());
 app.get("/api/health", (_, res) => {
   res.json({
     status: "ok",
-    service: "tempo",
+    service: "temo",
     mongodb: io.engine.clientsCount >= 0 ? "connected" : "disconnected",
     socketio: "active",
   });

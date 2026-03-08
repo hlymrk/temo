@@ -53,7 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <Typography variant="body1" color="text.secondary" sx={{ mt: 2, mb: 4 }}>
                 We're sorry for the inconvenience. Please try refreshing the page.
               </Typography>
-              {this.state.error && process.env.NODE_ENV === 'development' && (
+              {this.state.error && import.meta.env.NODE_ENV === 'development' && (
                 <Typography
                   variant="caption"
                   sx={{
