@@ -51,23 +51,30 @@ export const setupTableSockets = (io: Server) => {
         return;
       }
 
-      // For now, just log - Order model doesn't have status tracking
-      console.log(
-        `Staff updating item ${itemId} in order ${orderId} to status ${status}`,
+      const order = await OrderService.updateItemStatus(
+        orderId,
+        itemId,
+        status,
       );
-      // TODO: Implement status updates in Order model if needed
+      if (order) {
+        io.to(`table:${order.tableId}`).emit("order-updated", order);
+        io.to("waiters").emit("order-updated", order);
+      }
     });
 
     // Staff: Add items to order
     socket.on("add-items", async ({ orderId, items }) => {
       if (user?.role !== "STAFF" && user?.role !== "ADMIN") {
+        console.log(user);
         socket.emit("error", { message: "Unauthorized" });
         return;
       }
 
-      // For now, just log - Order model doesn't support adding items
-      console.log(`Staff adding items to order ${orderId}:`, items);
-      // TODO: Implement adding items to Order model if needed
+      const order = await OrderService.addItems(orderId, items);
+      if (order) {
+        io.to(`table:${order.tableId}`).emit("order-updated", order);
+        io.to("waiters").emit("order-updated", order);
+      }
     });
 
     socket.on("disconnect", () => {

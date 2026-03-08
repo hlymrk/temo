@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-export const useSocket = () => {
+export const useSocket = (
+  role: "CUSTOMER" | "STAFF" | "ADMIN" = "CUSTOMER",
+) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [userId] = useState(
@@ -13,6 +15,7 @@ export const useSocket = () => {
       transports: ["websocket"],
       auth: {
         userId,
+        role,
       },
     });
 
@@ -31,7 +34,7 @@ export const useSocket = () => {
     return () => {
       socketInstance.disconnect();
     };
-  }, [userId]);
+  }, [userId, role]);
 
   return { socket, isConnected, userId };
 };

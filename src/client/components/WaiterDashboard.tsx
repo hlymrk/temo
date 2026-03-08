@@ -14,8 +14,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  IconButton,
+  Collapse,
 } from '@mui/material';
-import { Plus, QrCode as QrCodeIcon, Eye, Download } from 'lucide-react';
+import { Plus, QrCode as QrCodeIcon, Eye, Download, LucideExpand, LucideShrink, PlusIcon } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
 
 interface Order {
@@ -27,6 +33,7 @@ interface Order {
     priceInPence: number;
     quantity: number;
     claimedBy?: string;
+    status: 'ordered' | 'preparing' | 'ready' | 'served';
   }>;
   totalInPence: number;
   status: string;
@@ -44,7 +51,10 @@ export default function WaiterDashboard() {
   } | null>(null);
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
-  const { socket } = useSocket();
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [addItemDialog, setAddItemDialog] = useState<{ open: boolean; orderId: string | null }>({ open: false, orderId: null });
+  const [newItem, setNewItem] = useState({ name: '', priceInPence: 0, quantity: 1 });
+  const { socket } = useSocket('STAFF');
 
   // Fetch active orders on component mount
   useEffect(() => {
@@ -174,6 +184,31 @@ export default function WaiterDashboard() {
     setQrCodeData(null);
   };
 
+  const handleUpdateItemStatus = (orderId: string, itemId: string, status: string) => {
+    if (socket) {
+      socket.emit('update-item-status', { orderId, itemId, status });
+    }
+  };
+
+  const handleAddItem = () => {
+    if (socket && addItemDialog.orderId && newItem.name && newItem.priceInPence > 0) {
+      const item = {
+        id: `item-${Date.now()}`,
+        name: newItem.name,
+        priceInPence: newItem.priceInPence,
+        quantity: newItem.quantity,
+        status: 'ordered' as const,
+      };
+      socket.emit('add-items', { orderId: addItemDialog.orderId, items: [item] });
+      setAddItemDialog({ open: false, orderId: null });
+      setNewItem({ name: '', priceInPence: 0, quantity: 1 });
+    }
+  };
+
+  const toggleExpandOrder = (orderId: string) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  };
+
   return (
     <Container maxWidth="lg">
       <Box sx={{ minHeight: '100vh', py: 4 }}>
@@ -278,20 +313,26 @@ export default function WaiterDashboard() {
                   const claimedItems = order.items.filter(item => item.claimedBy).length;
                   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
                   const totalPrice = (order.totalInPence / 100).toFixed(2);
+                  const isExpanded = expandedOrder === order._id;
 
                   return (
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={order._id}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={order._id}>
                       <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
                         <CardContent>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h5" sx={{ fontWeight: 700 }}>
                               {order.tableId}
                             </Typography>
-                            <Chip 
-                              label={order.status} 
-                              color={order.status === 'active' ? 'success' : 'warning'} 
-                              size="small" 
-                            />
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <IconButton size="small" onClick={() => toggleExpandOrder(order._id)}>
+                                {isExpanded ? <LucideShrink size={16} /> : <LucideExpand size={16} />}
+                              </IconButton>
+                              <Chip 
+                                label={order.status} 
+                                color={order.status === 'active' ? 'success' : 'warning'} 
+                                size="small" 
+                              />
+                            </Box>
                           </Box>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                             {totalItems} items • £{totalPrice}
@@ -299,16 +340,54 @@ export default function WaiterDashboard() {
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                             {claimedItems}/{totalItems} claimed
                           </Typography>
-                          <Button
-                            fullWidth
-                            size="small"
-                            variant="outlined"
-                            startIcon={<Eye size={16} />}
-                            href={`/?table=${order.tableId}`}
-                            target="_blank"
-                          >
-                            View
-                          </Button>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<Eye size={16} />}
+                              href={`/?table=${order.tableId}`}
+                              target="_blank"
+                            >
+                              View
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              startIcon={<PlusIcon size={16} />}
+                              onClick={() => setAddItemDialog({ open: true, orderId: order._id })}
+                            >
+                              Add Item
+                            </Button>
+                          </Box>
+                          <Collapse in={isExpanded}>
+                            <Box sx={{ mt: 2 }}>
+                              <Typography variant="subtitle2" sx={{ mb: 1 }}>Items:</Typography>
+                              {order.items.map((item) => (
+                                <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                  <Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.name}</Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      £{(item.priceInPence / 100).toFixed(2)} × {item.quantity} = £{((item.priceInPence * item.quantity) / 100).toFixed(2)}
+                                    </Typography>
+                                    {item.claimedBy && <Typography variant="caption" color="primary">Claimed</Typography>}
+                                  </Box>
+                                  <FormControl size="small" sx={{ minWidth: 100 }}>
+                                    <InputLabel>Status</InputLabel>
+                                    <Select
+                                      value={item.status}
+                                      label="Status"
+                                      onChange={(e) => handleUpdateItemStatus(order._id, item.id, e.target.value)}
+                                    >
+                                      <MenuItem value="ordered">Ordered</MenuItem>
+                                      <MenuItem value="preparing">Preparing</MenuItem>
+                                      <MenuItem value="ready">Ready</MenuItem>
+                                      <MenuItem value="served">Served</MenuItem>
+                                    </Select>
+                                  </FormControl>
+                                </Box>
+                              ))}
+                            </Box>
+                          </Collapse>
                         </CardContent>
                       </Card>
                     </Grid>
@@ -319,6 +398,39 @@ export default function WaiterDashboard() {
           </Grid>
         </Grid>
       </Box>
+
+      {/* Add Item Dialog */}
+      <Dialog open={addItemDialog.open} onClose={() => setAddItemDialog({ open: false, orderId: null })} maxWidth="sm" fullWidth>
+        <DialogTitle>Add New Item</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Item Name"
+            value={newItem.name}
+            onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+            sx={{ mb: 2, mt: 1 }}
+          />
+          <TextField
+            fullWidth
+            label="Price (in pence)"
+            type="number"
+            value={newItem.priceInPence}
+            onChange={(e) => setNewItem({ ...newItem, priceInPence: parseInt(e.target.value) || 0 })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Quantity"
+            type="number"
+            value={newItem.quantity}
+            onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddItemDialog({ open: false, orderId: null })}>Cancel</Button>
+          <Button variant="contained" onClick={handleAddItem}>Add Item</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* QR Code Dialog */}
       <Dialog open={!!qrCodeData} onClose={handleCloseQR} maxWidth="sm" fullWidth>

@@ -68,6 +68,36 @@ export class OrderService {
     return order.save();
   }
 
+  static async updateItemStatus(
+    orderId: string,
+    itemId: string,
+    status: "ordered" | "preparing" | "ready" | "served",
+  ): Promise<IOrder | null> {
+    const order = await Order.findById(orderId);
+    if (!order) return null;
+
+    const item = order.items.find((i: IOrderItem) => i.id === itemId);
+    if (!item) return null;
+
+    item.status = status;
+    return order.save();
+  }
+
+  static async addItems(
+    orderId: string,
+    newItems: IOrderItem[],
+  ): Promise<IOrder | null> {
+    const order = await Order.findById(orderId);
+    if (!order) return null;
+
+    order.items.push(...newItems);
+    const { totalInPence, vatInPence } = this.calculateTotals(order.items);
+    order.totalInPence = totalInPence;
+    order.vatInPence = vatInPence;
+
+    return order.save();
+  }
+
   private static calculateTotals(items: IOrderItem[]) {
     let total = dinero({ amount: 0, currency: GBP });
 

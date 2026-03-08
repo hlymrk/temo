@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrderItem {
   id: string;
@@ -6,6 +6,7 @@ export interface IOrderItem {
   priceInPence: number;
   quantity: number;
   claimedBy?: string; // User ID or session ID
+  status: "ordered" | "preparing" | "ready" | "served";
 }
 
 export interface IOrder extends Document {
@@ -14,7 +15,7 @@ export interface IOrder extends Document {
   items: IOrderItem[];
   totalInPence: number;
   vatInPence: number;
-  status: 'active' | 'partial' | 'completed';
+  status: "active" | "partial" | "completed";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,7 +25,12 @@ const OrderItemSchema = new Schema<IOrderItem>({
   name: { type: String, required: true },
   priceInPence: { type: Number, required: true },
   quantity: { type: Number, required: true, default: 1 },
-  claimedBy: { type: String, default: null }
+  claimedBy: { type: String, default: null },
+  status: {
+    type: String,
+    enum: ["ordered", "preparing", "ready", "served"],
+    default: "ordered",
+  },
 });
 
 const OrderSchema = new Schema<IOrder>(
@@ -34,13 +40,13 @@ const OrderSchema = new Schema<IOrder>(
     items: [OrderItemSchema],
     totalInPence: { type: Number, required: true },
     vatInPence: { type: Number, required: true },
-    status: { 
-      type: String, 
-      enum: ['active', 'partial', 'completed'], 
-      default: 'active' 
-    }
+    status: {
+      type: String,
+      enum: ["active", "partial", "completed"],
+      default: "active",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const Order = mongoose.model<IOrder>('Order', OrderSchema);
+export const Order = mongoose.model<IOrder>("Order", OrderSchema);
